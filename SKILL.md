@@ -1,7 +1,7 @@
 # bc-scan Skill
 
 **Trigger:** `/bc-scan`, "bc scan", "behavioral contracts scan", "run bc scan"
-**Version:** 1.2.0
+**Version:** 1.3.0
 
 Run a local behavioral contract scan and upload results to the Behavioral Contracts dashboard.
 
@@ -63,7 +63,16 @@ curl -s -X POST https://app.behavioral-contracts.com/api/mcp \
 
 Find entry where `fullName` matches `owner/repo`. Use its `id` as `$REPO_ID`.
 
-If no match: tell the user "Repository not found. Connect it at https://app.behavioral-contracts.com/repositories then try again." Stop.
+If no match, auto-create a local tracking entry:
+```bash
+curl -s -X POST https://app.behavioral-contracts.com/api/mcp/repository \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"fullName\": \"owner/repo\"}"
+```
+Parse the response and use `id` as `$REPO_ID`. Set `REPO_CREATED=true`.
+
+If the call fails, stop and show the error.
 
 ### Step 4 — Get CLI version
 
@@ -131,7 +140,7 @@ Build payload and write to `/tmp/bc-upload-payload.json`:
     "totalViolations": "<violations.length + sum(v.subViolations?.length ?? 0)>",
     "errorCount": "<count of ERROR severity across primary + sub-violations>",
     "warningCount": "<count of WARNING severity across primary + sub-violations>",
-    "scannedFiles": "<summary.filesAnalyzed>"
+    "scannedFiles": "<summary.files_analyzed from the CLI JSON>"
   },
   "commitSha": "<git rev-parse --short HEAD 2>/dev/null || echo local>",
   "branch": "<git branch --show-current 2>/dev/null || echo local>"
@@ -173,6 +182,12 @@ If errors exist, show the top 3:
 ```
 
 If zero violations: "No violations found. All behavioral contracts satisfied."
+
+If `REPO_CREATED=true`, append after the summary:
+```
+→ Repository tracked locally. Connect GitHub at the dashboard URL above
+  to enable cloud scans on push and PR gates.
+```
 
 ### Step 9 — Cleanup
 
