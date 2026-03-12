@@ -85,6 +85,19 @@ npx @behavioral-contracts/verify-cli@latest \
 
 If the output file is not created, show the error and stop. (Exit code 1 is normal when violations exist.)
 
+### Local vs Cloud Scan Scope
+
+Local scans (this skill) and cloud scans (triggered from the dashboard) may find different violation counts. This is expected:
+
+- **Local scan**: uses the `--tsconfig` you specify (e.g. `apps/web/tsconfig.json`), which covers only the files in that tsconfig's `include` pattern.
+- **Cloud scan**: clones the full repository and generates a root-level permissive tsconfig covering `**/*.ts`, `**/*.tsx`, `**/*.js` across all packages.
+
+**To get parity with the cloud scan count:**
+1. Run from the monorepo root with a root-level tsconfig, OR
+2. Create a root `tsconfig.scan.json` with `"include": ["**/*.ts", "**/*.tsx"]` (excluding node_modules/dist) and run with `--tsconfig ./tsconfig.scan.json`
+
+The cloud scan typically finds more violations because it covers all packages in a monorepo, not just the web app.
+
 ### Step 6 — Parse results
 
 Read `/tmp/bc-scan-results.json`. Extract:
@@ -110,13 +123,14 @@ Build payload and write to `/tmp/bc-upload-payload.json`:
       "lineNumber": "<violation.line>",
       "columnNumber": "<violation.column>",
       "functionName": "<violation.function>",
-      "codeSnippet": "<violation.codeContext>"
+      "codeSnippet": "<violation.codeContext>",
+      "subViolations": "<violation.subViolations mapped as: [{postconditionId, message, severity: UPPERCASE}] — omit field if empty>"
     }
   ],
   "summary": {
-    "totalViolations": 0,
-    "errorCount": 0,
-    "warningCount": 0,
+    "totalViolations": "<violations.length + sum(v.subViolations?.length ?? 0)>",
+    "errorCount": "<count of ERROR severity across primary + sub-violations>",
+    "warningCount": "<count of WARNING severity across primary + sub-violations>",
     "scannedFiles": "<summary.filesAnalyzed>"
   },
   "commitSha": "<git rev-parse --short HEAD 2>/dev/null || echo local>",
@@ -125,6 +139,10 @@ Build payload and write to `/tmp/bc-upload-payload.json`:
 ```
 
 Note: `severity` must be uppercased (`"error"` → `"ERROR"`).
+
+Note: `totalViolations` must include sub-violations. Compute as:
+`violations.length + sum(v.subViolations?.length ?? 0)`.
+Similarly expand `errorCount` and `warningCount` to include sub-violation severities so the dashboard count matches the CLI output.
 
 ```bash
 curl -s -X POST https://app.behavioral-contracts.com/api/mcp/upload \
