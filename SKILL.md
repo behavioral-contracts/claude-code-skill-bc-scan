@@ -52,6 +52,7 @@ Otherwise:
 git remote get-url origin 2>/dev/null
 ```
 Parse to `owner/repo` format (strip `.git`, handle SSH and HTTPS).
+Store as `$GITHUB_FULL_NAME`. If parsing fails (no remote, non-GitHub URL), set `$GITHUB_FULL_NAME=""`.
 
 Call `list_repositories`:
 ```bash
@@ -143,9 +144,12 @@ Build payload and write to `/tmp/bc-upload-payload.json`:
     "scannedFiles": "<summary.files_analyzed from the CLI JSON>"
   },
   "commitSha": "<git rev-parse --short HEAD 2>/dev/null || echo local>",
-  "branch": "<git branch --show-current 2>/dev/null || echo local>"
+  "branch": "<git branch --show-current 2>/dev/null || echo local>",
+  "githubFullName": "$GITHUB_FULL_NAME"
 }
 ```
+
+Note: `githubFullName` is included when a GitHub remote is detected. The dashboard uses this to enable commit-status checks for MCP-uploaded repos. If no GitHub remote is found, omit the field entirely (do not send an empty string). Only include it when `$GITHUB_FULL_NAME` matches the `owner/repo` pattern (`[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+`).
 
 Note: `severity` must be uppercased (`"error"` → `"ERROR"`).
 
