@@ -1,6 +1,8 @@
 # bc-scan — Behavioral Contracts Claude Code Skill
 
-A Claude Code skill that runs behavioral contract scans against your TypeScript codebase and uploads results to the [Behavioral Contracts](https://app.behavioral-contracts.com) dashboard — all without leaving your editor.
+> **READ-ONLY.** This skill never modifies your code or creates commits. It only reads your codebase, runs an analysis, and uploads results. Safe to run at any time.
+
+A Claude Code skill that scans your TypeScript codebase for behavioral contract violations and uploads results to the [Behavioral Contracts](https://app.behavioral-contracts.com) dashboard — all without leaving your editor.
 
 ## What it does
 
@@ -9,7 +11,19 @@ A Claude Code skill that runs behavioral contract scans against your TypeScript 
 - Detects your repository from `git remote` — no manual ID needed
 - Reads your API key from your existing MCP config — no extra env vars needed
 - Uploads scan results and shows a summary with a dashboard link
-- Optional `--fix` mode to repair the top violations in-editor
+
+## Want to fix violations, not just find them?
+
+Use **[bc-fix](https://github.com/behavioral-contracts/claude-code-skill-bc-fix)** — the companion skill that reads the full violation list, proposes a DRY fix plan, gets your approval, then applies fixes in batches with atomic commits.
+
+```bash
+gh repo clone behavioral-contracts/claude-code-skill-bc-fix ~/.claude/skills/bc-fix
+```
+
+Use `bc-scan` when you want to **audit** your codebase or run a check in CI.
+Use `bc-fix` when you want to **remediate** violations and have Claude write the fixes.
+
+`bc-fix` always runs a `bc-scan` internally as its first step, so you never need to run both manually.
 
 ## Install
 
