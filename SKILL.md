@@ -21,6 +21,18 @@ If no key found: tell the user "API key not found. Follow docs/setup.md to confi
 
 Store as `$API_KEY`.
 
+### Step 1.5 — Resolve base URL
+
+Check `.bc-scan` config file for `baseUrl`:
+```bash
+cat .bc-scan 2>/dev/null
+```
+If it contains `"baseUrl": "<url>"`, use that as `$BASE_URL`.
+
+Otherwise fall back to `$BC_BASE_URL` env var, then default to `https://app.behavioral-contracts.com`.
+
+Store as `$BASE_URL`. This URL is used for all API calls in subsequent steps.
+
 ### Step 2 — Find tsconfig.json
 
 Check `.bc-scan` config file first:
@@ -56,7 +68,7 @@ Store as `$GITHUB_FULL_NAME`. If parsing fails (no remote, non-GitHub URL), set 
 
 Call `list_repositories`:
 ```bash
-curl -s -X POST https://app.behavioral-contracts.com/api/mcp \
+curl -s -X POST $BASE_URL/api/mcp \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"list_repositories","arguments":{}},"id":1}'
@@ -66,7 +78,7 @@ Find entry where `fullName` matches `owner/repo`. Use its `id` as `$REPO_ID`.
 
 If no match, auto-create a local tracking entry:
 ```bash
-curl -s -X POST https://app.behavioral-contracts.com/api/mcp/repository \
+curl -s -X POST $BASE_URL/api/mcp/repository \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d "{\"fullName\": \"owner/repo\"}"
@@ -78,8 +90,10 @@ If the call fails, stop and show the error.
 ### Step 4 — Get CLI version
 
 ```bash
-CLI_VERSION=$(npx @behavioral-contracts/verify-cli@latest --version 2>/dev/null)
+CLI_VERSION=$(npm show @behavioral-contracts/verify-cli@latest version 2>/dev/null)
 ```
+
+This returns the npm package version (e.g. `2.1.3`), which is the actual version being run. Do not use `--version` — the CLI binary's self-reported version string may be stale and not match the npm package version.
 
 ### Step 5 — Run verify-cli
 
@@ -158,7 +172,7 @@ Note: `totalViolations` must include sub-violations. Compute as:
 Similarly expand `errorCount` and `warningCount` to include sub-violation severities so the dashboard count matches the CLI output.
 
 ```bash
-curl -s -X POST https://app.behavioral-contracts.com/api/mcp/upload \
+curl -s -X POST $BASE_URL/api/mcp/upload \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d @/tmp/bc-upload-payload.json
@@ -176,7 +190,7 @@ Files scanned:  <filesAnalyzed>
 Violations:     <total> (<errors> errors, <warnings> warnings)
 Scan ID:        <scanId from response>
 
-Dashboard: https://app.behavioral-contracts.com/repositories/<REPO_ID>
+Dashboard: $BASE_URL/repositories/<REPO_ID>
 ```
 
 If errors exist, show the top 3:
