@@ -159,9 +159,17 @@ Build payload and write to `/tmp/bc-upload-payload.json`:
   },
   "commitSha": "<git rev-parse --short HEAD 2>/dev/null || echo local>",
   "branch": "<git branch --show-current 2>/dev/null || echo local>",
-  "githubFullName": "$GITHUB_FULL_NAME"
+  "githubFullName": "$GITHUB_FULL_NAME",
+  "packageCallSiteCounts": {
+    "<package_name>": "<callSiteCount from packages[].callSiteCount in CLI JSON output>"
+  }
 }
 ```
+
+Note: `packageCallSiteCounts` is a Record<string, number> built from the verify-cli JSON output
+`packages` array (available in CLI output since v2.2.1). Key = package name, value = total call
+site count across all source files. If the CLI output has no `packages` array (older version),
+omit the field entirely.
 
 Note: `githubFullName` is included when a GitHub remote is detected. The dashboard uses this to enable commit-status checks for MCP-uploaded repos. If no GitHub remote is found, omit the field entirely (do not send an empty string). Only include it when `$GITHUB_FULL_NAME` matches the `owner/repo` pattern (`[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+`).
 
