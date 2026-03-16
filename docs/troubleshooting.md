@@ -59,6 +59,31 @@ npx @behavioral-contracts/verify-cli --help
 
 Confirm the version is 2.x or later (V2 analyzer is default). Also check that the tsconfig includes the source files you expect to be scanned (not just config files).
 
+## npm EPERM error / root-owned cache files
+
+You may see errors like:
+
+```
+npm error code EPERM
+npm error syscall open
+npm error path /Users/.../.npm/_cacache/tmp/...
+npm error Your cache folder contains root-owned files, due to a bug in
+npm error previous versions of npm which has since been addressed.
+npm error To permanently fix this problem, please run:
+npm error   sudo chown -R 501:20 "/Users/.../.npm"
+```
+
+**What it means:** The npm cache has files owned by root (from a previous `sudo npm` invocation). This is a macOS system issue, not a bc-scan bug.
+
+**Impact:** The scan still completes correctly — the output file is created and results are uploaded. The error is cosmetic. `CLI_VERSION` will show as `"unknown"` in the scan summary.
+
+**Permanent fix** (run once in your terminal):
+```bash
+sudo chown -R $(id -u):$(id -g) ~/.npm
+```
+
+After running this, npm and npx commands will work without the EPERM error.
+
 ## Upload succeeds but scan doesn't appear in dashboard
 
 1. Confirm the `repositoryId` in the payload matches your repo's cuid (not the GitHub repo ID)

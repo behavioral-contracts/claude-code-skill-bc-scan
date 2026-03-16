@@ -1,7 +1,7 @@
 # bc-scan Skill
 
 **Trigger:** `/bc-scan`, "bc scan", "behavioral contracts scan", "run bc scan"
-**Version:** 1.3.0
+**Version:** 1.3.1
 
 Run a local behavioral contract scan and upload results to the Behavioral Contracts dashboard.
 
@@ -90,10 +90,18 @@ If the call fails, stop and show the error.
 ### Step 4 — Get CLI version
 
 ```bash
-CLI_VERSION=$(npm show @behavioral-contracts/verify-cli@latest version 2>/dev/null)
+CLI_VERSION=$(npm show @behavioral-contracts/verify-cli@latest version --prefer-offline 2>/dev/null)
+if [ -z "$CLI_VERSION" ]; then
+  CLI_VERSION=$(npm show @behavioral-contracts/verify-cli@latest version 2>/dev/null)
+fi
+if [ -z "$CLI_VERSION" ]; then
+  CLI_VERSION="unknown"
+fi
 ```
 
-This returns the npm package version (e.g. `2.1.3`), which is the actual version being run. Do not use `--version` — the CLI binary's self-reported version string may be stale and not match the npm package version.
+This returns the npm package version (e.g. `2.2.3`), which is the actual version being run. Do not use `--version` — the CLI binary's self-reported version string may be stale and not match the npm package version.
+
+`--prefer-offline` is used first to bypass a known macOS npm cache issue where root-owned cache files cause `EPERM` errors with `npm show`. If that also fails, a network fetch is attempted. If both fail, the fallback is `"unknown"`, which allows the scan to proceed. The permanent fix for the EPERM issue is `sudo chown -R $(id -u):$(id -g) ~/.npm`.
 
 ### Step 5 — Run verify-cli
 
@@ -102,12 +110,14 @@ npx @behavioral-contracts/verify-cli@latest \
   --tsconfig <tsconfig_path> \
   --output /tmp/bc-scan-results.json \
   --include-drafts \
-  --no-terminal
+  --no-terminal 2>/tmp/bc-scan-stderr.txt
 ```
 
 `--include-drafts` ensures full coverage matching cloud scan behavior.
 
-If the output file is not created, show the error and stop. (Exit code 1 is normal when violations exist.)
+Stderr is redirected to suppress npm cache noise (e.g. `EPERM` root-owned cache errors, which are cosmetic and do not affect scan results).
+
+If `/tmp/bc-scan-results.json` is not created, show the contents of `/tmp/bc-scan-stderr.txt` and stop. (Exit code 1 is normal when violations exist — rely on file existence, not exit code.)
 
 ### Local vs Cloud Scan Scope
 
