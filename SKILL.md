@@ -194,6 +194,7 @@ If `success` is not `true`, show the error and stop.
 Behavioral Contracts Scan Complete
 
 CLI version:    <cliVersion>
+Branch:         <git branch --show-current 2>/dev/null || echo local>
 Files scanned:  <filesAnalyzed>
 Violations:     <total> (<errors> errors, <warnings> warnings)
 Scan ID:        <scanId from response>
