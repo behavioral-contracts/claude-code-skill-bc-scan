@@ -238,7 +238,15 @@ rm -f /tmp/bc-scan-results.json /tmp/bc-upload-payload.json
 
 If invoked as `/bc-scan --fix`:
 
-After Step 8, ask: "Fix the top ERROR violations? (yes/no)"
+After Step 8, use AskUserQuestion(
+  header: "Fix Violations",
+  question: "Fix the top ERROR violations?",
+  options: [
+    { label: "Yes — fix top errors", description: "Apply try-catch fixes to the top ERROR violations (up to 3)" },
+    { label: "No — scan only", description: "Leave violations as-is; re-run /bc-fix for a full fix session" }
+  ],
+  multiSelect: false
+)
 
 If yes, for each ERROR violation (top 3 max):
 - Read `violation.file`, locate `violation.line`
